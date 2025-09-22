@@ -2,7 +2,8 @@ import express from 'express';
 import User from '../models/UserModel.js';
 import Product from '../models/ProductModel.js';
 import { isAuthenticated } from '../utils/auth.js';
-import { uploadProfileImage } from '../utils/imgupload.js';
+import { uploadProfileImage } from '../utils/multerconfig.js'; // New multer memory storage
+import { uploadProfileImageToCloudinary } from '../utils/cloudinaryfunctions.js'; // New cloudinary upload function
 
 const router = express.Router();
 
@@ -19,27 +20,49 @@ router.get('/profile', isAuthenticated, async (req, res) => {
 
 // Update user profile
 router.put('/profile', isAuthenticated, uploadProfileImage.single('profilePic'), async (req, res) => {
-  try {
-    const { name, contactNumber } = req.body;
-    const updateData = { name, contactNumber };
+    try {
+        const { name, contactNumber } = req.body;
+        const updateData = { name, contactNumber };
+        
+        // Find the user to get their current profilePic URL
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
 
-    if (req.file) {
-      updateData.profilePic = req.file.filename;
+        if (req.file) {
+            // Upload the new image to Cloudinary
+            const uploadResult = await uploadProfileImageToCloudinary(req.file.buffer);
+            updateData.profilePic = uploadResult.secure_url;
+
+            // Check if the old profile picture is a Cloudinary URL before trying to delete it
+            if (user.profilePic && user.profilePic.startsWith('http')) {
+                // Extract the public ID from the old Cloudinary URL
+                const urlParts = user.profilePic.split('/');
+                const publicIdWithExtension = urlParts.pop(); // e.g., 'profile-123456.jpg'
+                const publicId = publicIdWithExtension.split('.')[0]; // e.g., 'profile-123456'
+                
+                // Construct the full public ID with folder path if necessary
+                const fullPublicId = `profileImages/${publicId}`;
+
+                // Use the correct public ID for deletion
+                await cloudinary.uploader.destroy(fullPublicId);
+            }
+        }
+
+        // Update the user's document
+        const updatedUser = await User.findByIdAndUpdate(
+            req.user._id,
+            updateData,
+            { new: true }
+        ).select('-password');
+
+        res.json(updatedUser);
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        res.status(500).json({ error: 'Failed to update profile' });
     }
-
-    const updatedUser = await User.findByIdAndUpdate(
-      req.user._id,
-      updateData,
-      { new: true }
-    ).select('-password');
-
-    res.json(updatedUser);
-  } catch (error) {
-    console.error('Error updating profile:', error);
-    res.status(500).json({ error: 'Failed to update profile' });
-  }
 });
-
 // Get user's products
 router.get('/products', isAuthenticated, async (req, res) => {
   try {

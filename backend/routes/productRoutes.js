@@ -1,8 +1,9 @@
 import express from 'express';
 import Product from '../models/ProductModel.js';
 import { isAuthenticated } from '../utils/auth.js';
-import { uploadProductImage } from '../utils/imgupload.js';
 import { searchProducts } from '../utils/recommendation.js';
+import { uploadProductImage } from '../utils/multerconfig.js'; // The new multer memory storage config
+import { uploadProductImageToCloudinary } from '../utils/cloudinaryfunctions.js'; // The new cloudinary upload functionimport fs from 'fs';
 
 const router = express.Router();
 
@@ -18,14 +19,32 @@ router.get('/', async (req, res) => {
 });
 
 // Search products (must come before /:id route)
-router.get('/search/:query', async (req, res) => {
+router.post('/', isAuthenticated, uploadProductImage.single('image'), async (req, res) => {
   try {
-    const result = await searchProducts(req.params.query, req.user?._id);
-    
-    res.json(result);
+    const { name, description, price, brand } = req.body;
+    let image = null;
+    if (req.file) {
+      // New way: uploads directly from memory buffer
+      const uploadResult = await uploadProductImageToCloudinary(req.file.buffer);
+      image = uploadResult.secure_url;
+      // You may also want to save the public_id in case you need to delete the image later
+      // const publicId = uploadResult.public_id;
+    }
+
+    const product = new Product({
+      name,
+      description,
+      price: parseFloat(price),
+      brand,
+      sellerId: req.user._id,
+      image,
+    });
+
+    await product.save();
+    res.status(201).json(product);
   } catch (error) {
-    console.error('Search error:', error);
-    res.status(500).json({ error: 'Search failed' });
+    console.error('Error creating product:', error);
+    res.status(500).json({ error: 'Failed to create product' });
   }
 });
 
@@ -47,7 +66,12 @@ router.get('/:id', async (req, res) => {
 router.post('/', isAuthenticated, uploadProductImage.single('image'), async (req, res) => {
   try {
     const { name, description, price, brand } = req.body;
-    const image = req.file ? req.file.filename : null;
+    let image = null;
+    if (req.file) {
+      const upload = await cloudinary.uploader.upload(req.file.path, { folder: 'shopease/productImages' });
+      image = upload.secure_url;
+      try { fs.unlinkSync(req.file.path); } catch (_) {}
+    }
 
     const product = new Product({
       name,
@@ -82,7 +106,15 @@ router.put('/:id', isAuthenticated, uploadProductImage.single('image'), async (r
 
     const updateData = { name, description, price: parseFloat(price), brand };
     if (req.file) {
-      updateData.image = req.file.filename;
+      // New way: uploads directly from memory buffer
+      const uploadResult = await uploadProductImageToCloudinary(req.file.buffer);
+      updateData.image = uploadResult.secure_url;
+      // You might also want to delete the old image from Cloudinary here
+      // if (product.image) {
+      //   // Extract public_id from the old image URL and delete it
+      //   const publicId = product.image.split('/').pop().split('.')[0];
+      //   await cloudinary.uploader.destroy(publicId);
+      // }
     }
 
     const updatedProduct = await Product.findByIdAndUpdate(

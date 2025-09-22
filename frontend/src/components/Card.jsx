@@ -2,7 +2,10 @@ import { Link } from "react-router-dom";
 
 function Card({ product }) {
   return (
-    <Link to={`/products/${product._id}`} className="w-full max-w-xs rounded-lg">
+    <Link
+      to={`/products/${product._id}`}
+      className="w-full max-w-xs rounded-lg"
+    >
       <div
         className="bg-white rounded-lg shadow-md dark:bg-gray-800 flex flex-col h-[400px]
                    transform transition duration-300 ease-in-out 
@@ -21,11 +24,7 @@ function Card({ product }) {
         {/* Image */}
         <div className="h-[150px] w-full px-4 flex items-center justify-center bg-white">
           <img
-            src={
-              product.image.startsWith("http")
-                ? product.image
-                : `${import.meta.env.VITE_API_BASE_URL}/uploads/productImages/${product.image}`
-            }
+            src={product.image}
             alt={product.name}
             className="max-h-full max-w-full object-contain"
           />
