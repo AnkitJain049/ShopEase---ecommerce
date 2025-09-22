@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getAuthHeaders } from '../lib/auth';
 
 function ProtectedRoute({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(null);
@@ -11,6 +12,9 @@ function ProtectedRoute({ children }) {
       try {
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/status`, {
           credentials: 'include',
+          headers: {
+            ...getAuthHeaders(),
+          }
         });
 
         if (response.ok) {

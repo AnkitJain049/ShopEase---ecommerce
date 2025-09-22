@@ -1,8 +1,7 @@
 import express from 'express';
-import passport from 'passport';
 import bcrypt from 'bcrypt';
 import User from '../models/UserModel.js';
-import { isAuthenticated } from '../utils/auth.js';
+import { isAuthenticated, generateJwtForUser, setAuthCookie, clearAuthCookie } from '../utils/auth.js';
 
 const router = express.Router();
 
@@ -38,37 +37,54 @@ router.post('/register', async (req, res) => {
 });
 
 // Login route
-router.post('/login', passport.authenticate('local'), (req, res) => {
-  res.json({ 
-    message: 'Login successful', 
-    user: {
-      id: req.user._id,
-      name: req.user.name,
-      email: req.user.email,
-      profilePic: req.user.profilePic
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
     }
-  });
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    // Guard against legacy plaintext passwords from old Google OAuth users
+    if (!user.password || !user.password.startsWith('$2')) {
+      return res.status(401).json({ error: 'Password not set for this account. Please reset your password.' });
+    }
+
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const token = generateJwtForUser(user);
+    setAuthCookie(res, token);
+
+    res.json({
+      message: 'Login successful',
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        profilePic: user.profilePic
+      }
+    });
+  } catch (err) {
+    console.error('Login error:', err);
+    const isDevelopment = (process.env.NODE_ENV === 'development');
+    res.status(500).json({ error: isDevelopment ? `Login failed: ${err.message}` : 'Login failed' });
+  }
 });
 
 // Logout route
 router.post('/logout', (req, res) => {
-  req.logout((err) => {
-    if (err) {
-      return res.status(500).json({ error: 'Logout failed' });
-    }
-    res.json({ message: 'Logout successful' });
-  });
+  clearAuthCookie(res);
+  return res.json({ message: 'Logout successful' });
 });
 
 // Google OAuth routes
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-
-router.get('/google/callback', 
-  passport.authenticate('google', { failureRedirect: '/login' }),
-  (req, res) => {
-    res.redirect(process.env.FRONTEND_URL || 'http://localhost:3000');
-  }
-);
+// Note: Google OAuth via passport has been removed in JWT migration
 
 // Get current user
 router.get('/me', isAuthenticated, (req, res) => {
@@ -84,29 +100,21 @@ router.get('/me', isAuthenticated, (req, res) => {
 });
 
 // Check authentication status
-router.get('/status', (req, res) => {
-  if (req.isAuthenticated()) {
-    res.json({ 
-      authenticated: true, 
-      user: {
-        id: req.user._id,
-        name: req.user.name,
-        email: req.user.email,
-        profilePic: req.user.profilePic
-      }
-    });
-  } else {
-    res.json({ authenticated: false });
-  }
+router.get('/status', isAuthenticated, (req, res) => {
+  res.json({
+    authenticated: true,
+    user: {
+      id: req.user._id,
+      name: req.user.name,
+      email: req.user.email,
+      profilePic: req.user.profilePic
+    }
+  });
 });
 
 // Get user ID for chatbot
-router.get('/chatbot-user-id', (req, res) => {
-  if (req.isAuthenticated()) {
-    res.json({ userId: req.user._id.toString() });
-  } else {
-    res.status(401).json({ error: 'Not authenticated' });
-  }
+router.get('/chatbot-user-id', isAuthenticated, (req, res) => {
+  res.json({ userId: req.user._id.toString() });
 });
 
 export default router; 

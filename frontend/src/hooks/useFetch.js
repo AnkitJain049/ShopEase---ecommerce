@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
+import { getAuthHeaders } from '../lib/auth';
 
 function useFetch(url) {
   const [data, setData] = useState(null);
 
   useEffect(() => {
    fetch(url, {
-    credentials: 'include', 
+    credentials: 'include',
+    headers: {
+      ...getAuthHeaders(),
+    }
   })
       .then(res => {
         if (!res.ok) throw new Error("Network response was not ok");

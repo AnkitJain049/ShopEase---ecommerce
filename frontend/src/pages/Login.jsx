@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { setToken } from '../lib/auth';
 
 function Login({ onBack }) {
   const navigate = useNavigate();
@@ -32,6 +33,9 @@ function Login({ onBack }) {
       const data = await res.json();
 
       if (res.ok) {
+        if (data.token) {
+          setToken(data.token);
+        }
         // ✅ Redirect with URL param
         navigate('/products?message=logged in successfully');
       } else {

@@ -1,9 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import session from 'express-session';
-import MongoStore from 'connect-mongo';
-import passport from 'passport';
-import flash from 'express-flash';
+import cookieParser from 'cookie-parser';
 import cors from "cors";
 import methodOverride from 'method-override';
 import path from 'path';
@@ -11,7 +8,7 @@ import { fileURLToPath } from 'url';
 
 // Import custom modules
 import { connectDB } from "./utils/database.js";
-import { initializePassport, isAuthenticated } from "./utils/auth.js";
+import { isAuthenticated } from "./utils/auth.js";
 import authRoutes from "./routes/authRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
@@ -25,6 +22,12 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 5000;
 const isDevelopment = process.env.NODE_ENV === 'development';
+
+// Validate required env variables early
+if (!process.env.JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET is not set in environment variables.');
+  process.exit(1);
+}
 
 // Get __dirname equivalent for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -42,27 +45,8 @@ app.use(cors({
   credentials: true
 }));
 
-// Session configuration
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key',
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI
-  }),
-  cookie: {
-    secure: !isDevelopment, // Only secure in production
-    sameSite: isDevelopment ? 'lax' : 'none',
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
-}));
-
-// Passport middleware
-app.use(passport.initialize());
-app.use(passport.session());
-
-// Flash messages
-app.use(flash());
+// Cookie parser for httpOnly JWT cookie support
+app.use(cookieParser());
 
 // Method override for PUT/DELETE requests
 app.use(methodOverride('_method'));
@@ -70,24 +54,7 @@ app.use(methodOverride('_method'));
 // Static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Initialize Passport
-initializePassport(passport);
-
-// Authentication check endpoint (unprotected)
-app.get('/api/auth/check', (req, res) => {
-  if (req.isAuthenticated()) {
-    res.json({ 
-      authenticated: true, 
-      user: {
-        id: req.user._id,
-        name: req.user.name,
-        email: req.user.email
-      }
-    });
-  } else {
-    res.status(401).json({ authenticated: false });
-  }
-});
+// Session-based check removed; use /api/auth/status protected by JWT instead
 
 // Routes
 app.use('/api/auth', authRoutes);

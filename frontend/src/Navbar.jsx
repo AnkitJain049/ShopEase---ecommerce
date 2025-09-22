@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { clearToken } from './lib/auth';
 
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,9 +15,11 @@ function Navbar() {
         method: 'POST',
         credentials: 'include',
       });
+      clearToken();
       navigate('/?message=Logged Out');
     } catch (err) {
       // fallback: still redirect, but could show error notification if desired
+      clearToken();
       navigate('/?message=Logged Out');
     }
   };

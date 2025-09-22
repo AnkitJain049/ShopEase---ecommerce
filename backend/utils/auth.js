@@ -1,95 +1,74 @@
-import passport from "passport";
-import bcrypt from "bcrypt";
-import { Strategy as LocalStrategy } from "passport-local";
-import GoogleStrategy from "passport-google-oauth20";
+import jwt from "jsonwebtoken";
 import User from "../models/UserModel.js";
 
-export const initializePassport = (passport) => {
-  // Local Strategy for username/password authentication
-  passport.use(
-    "local",
-    new LocalStrategy(
-      {
-        usernameField: 'email',
-        passwordField: 'password'
-      },
-      async (email, password, done) => {
-        try {
-          const user = await User.findOne({ email: email });
-          if (!user) {
-            return done(null, false, { message: "No user found with that email." });
-          }
+// Create a JWT for a user
+export const generateJwtForUser = (user) => {
+  const payload = {
+    sub: user._id.toString(),
+    email: user.email,
+    name: user.name,
+  };
 
-          const isValidPassword = await bcrypt.compare(password, user.password);
-          if (isValidPassword) {
-            return done(null, user);
-          } else {
-            return done(null, false, { message: "Password incorrect." });
-          }
-        } catch (err) {
-          console.error("Error during local authentication:", err);
-          done(err);
-        }
-      }
-    )
-  );
-
-  // Google OAuth Strategy
-  passport.use(
-    new GoogleStrategy(
-      {
-        clientID: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: "/api/auth/google/callback",
-      },
-      async (accessToken, refreshToken, profile, done) => {
-        try {
-          // Check if user already exists
-          let user = await User.findOne({ email: profile.emails[0].value });
-
-          if (user) {
-            return done(null, user);
-          }
-
-          // Create new user if doesn't exist
-          user = new User({
-            name: profile.displayName,
-            email: profile.emails[0].value,
-            password: "google-auth", // Placeholder password for Google users
-            contactNumber: "N/A", // Google doesn't provide phone number
-            profilePic: profile.photos[0]?.value || "default.jpg",
-          });
-
-          await user.save();
-          return done(null, user);
-        } catch (error) {
-          console.error("Error in Google OAuth:", error);
-          return done(error, null);
-        }
-      }
-    )
-  );
-
-  // Serialize user for the session
-  passport.serializeUser((user, done) => {
-    done(null, user.id);
+  const token = jwt.sign(payload, process.env.JWT_SECRET, {
+    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
   });
+  return token;
+};
 
-  // Deserialize user from the session
-  passport.deserializeUser(async (id, done) => {
-    try {
-      const user = await User.findById(id);
-      done(null, user);
-    } catch (error) {
-      done(error, null);
+// Read token from Authorization: Bearer or from httpOnly cookie named "token"
+const extractTokenFromRequest = (req) => {
+  const authHeader = req.headers.authorization || req.headers.Authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    return authHeader.substring(7);
+  }
+  // Cookie parser populates req.cookies
+  if (req.cookies && req.cookies.token) {
+    return req.cookies.token;
+  }
+  return null;
+};
+
+// JWT auth middleware (replaces session/passport)
+export const isAuthenticated = async (req, res, next) => {
+  try {
+    const token = extractTokenFromRequest(req);
+    if (!token) {
+      return res.status(401).json({ error: 'Not authenticated' });
     }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Option 1: attach minimal user info from token
+    // Option 2: fetch full user to ensure fresh data
+    const user = await User.findById(decoded.sub);
+    if (!user) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+    req.user = user;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+};
+
+// Helper to set JWT as httpOnly cookie
+export const setAuthCookie = (res, token) => {
+  const isDevelopment = (process.env.NODE_ENV === 'development');
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: !isDevelopment, // secure in production
+    sameSite: isDevelopment ? 'lax' : 'none',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    path: '/',
   });
 };
 
-// Middleware to check if user is authenticated
-export const isAuthenticated = (req, res, next) => {
-  if (req.isAuthenticated()) {
-    return next();
-  }
-  res.status(401).json({ error: 'Not authenticated' });
-}; 
+// Helper to clear JWT cookie
+export const clearAuthCookie = (res) => {
+  const isDevelopment = (process.env.NODE_ENV === 'development');
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: !isDevelopment,
+    sameSite: isDevelopment ? 'lax' : 'none',
+    path: '/',
+  });
+};
