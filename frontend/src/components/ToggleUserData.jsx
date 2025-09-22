@@ -7,10 +7,7 @@ import Notification from "./Notification";
 function ToggleUserData() {
   const [activeTab, setActiveTab] = useState("orders");
   const [reviewingProductId, setReviewingProductId] = useState(null);
-  // State to hold the ID of the product being edited (for inline display)
   const [editingProductId, setEditingProductId] = useState(null);
-
-  // State for notification
   const [notification, setNotification] = useState(null);
 
   const { data: listings, refetch: refetchListings } = useFetch(`${import.meta.env.VITE_API_BASE_URL}/api/user/products`);
@@ -30,35 +27,31 @@ function ToggleUserData() {
     } else {
       setReviewingProductId(productId);
     }
-    setEditingProductId(null); // Close edit form if review form is opened
+    setEditingProductId(null);
   };
 
-  // Function to handle clicking "Edit Listing"
   const handleEditListing = (productId) => {
     if (editingProductId === productId) {
-      setEditingProductId(null); // If already editing, close it
+      setEditingProductId(null);
     } else {
-      setEditingProductId(productId); // Set the ID of the product to be edited
+      setEditingProductId(productId);
     }
-    setReviewingProductId(null); // Close review form if edit form is opened
+    setReviewingProductId(null);
   };
 
-  // Callback for when EditProduct successfully updates
   const handleProductUpdated = (updatedProduct) => {
     console.log("Product updated:", updatedProduct);
-    setEditingProductId(null); // Close the edit form
-    refetchListings(); // Re-fetch listings to show updated data
+    setEditingProductId(null);
+    refetchListings();
     showNotification("Listing updated successfully!", "success");
   };
 
-  // Callback for when EditProduct is cancelled
   const handleCancelEdit = () => {
-    setEditingProductId(null); // Close the edit form
+    setEditingProductId(null);
   };
 
   return (
     <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 my-8 max-w-5xl mx-auto">
-      {/* Notification Component */}
       {notification && (
         <Notification
           message={notification.message}
@@ -67,13 +60,12 @@ function ToggleUserData() {
         />
       )}
 
-      {/* Toggle Buttons */}
       <div className="flex justify-center gap-4 mb-6">
         <button
           onClick={() => {
             setActiveTab("orders");
             setReviewingProductId(null);
-            setEditingProductId(null); // Close edit form if switching tabs
+            setEditingProductId(null);
           }}
           className={`px-4 py-2 rounded ${
             activeTab === "orders"
@@ -86,8 +78,8 @@ function ToggleUserData() {
         <button
           onClick={() => {
             setActiveTab("listings");
-            setReviewingProductId(null); // Close review form if switching tabs
-            setEditingProductId(null); // Close edit form if switching tabs
+            setReviewingProductId(null);
+            setEditingProductId(null);
           }}
           className={`px-4 py-2 rounded ${
             activeTab === "listings"
@@ -110,7 +102,8 @@ function ToggleUserData() {
               >
                 <div className="flex items-center gap-4">
                   <img
-                    src={`${import.meta.env.VITE_API_BASE_URL}/uploads/productImages/${order.productId?.image}`}
+                    // Corrected Image Source
+                    src={order.productId?.image}
                     alt={order.productId?.name}
                     className="w-24 h-24 object-cover rounded"
                   />
@@ -139,7 +132,6 @@ function ToggleUserData() {
                 </div>
                 {reviewingProductId === order.productId._id && (
                   <div className="mt-4">
-                    {/* Pass onCancel to ReviewForm so it can close itself */}
                     <ReviewForm productId={order.productId._id} onCancel={() => setReviewingProductId(null)} />
                   </div>
                 )}
@@ -158,13 +150,14 @@ function ToggleUserData() {
         <div className="space-y-6">
           {listings?.length > 0 ? (
             listings.map((product) => (
-              <React.Fragment key={product._id}> {/* Use React.Fragment to group */}
+              <React.Fragment key={product._id}>
                 <div
                   className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-700 shadow-sm"
                 >
                   <div className="flex items-center gap-4">
                     <img
-                      src={`${import.meta.env.VITE_API_BASE_URL}/uploads/productImages/${product.image}`}
+                      // Corrected Image Source
+                      src={product.image}
                       alt={product.name}
                       className="w-24 h-24 object-cover rounded"
                     />
@@ -190,11 +183,10 @@ function ToggleUserData() {
                     </div>
                   </div>
                 </div>
-                {/* Conditionally render EditProduct directly below the clicked listing */}
                 {editingProductId === product._id && (
-                  <div >
+                  <div>
                     <EditProduct
-                      product={product} // Pass the full product object to EditProduct
+                      product={product}
                       onUpdate={handleProductUpdated}
                       onCancel={handleCancelEdit}
                     />
