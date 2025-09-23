@@ -14,7 +14,7 @@ function Footer() {
         {/* Links */}
         <ul className="flex flex-wrap justify-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
           <li>
-            <a href="https://github.com/AnkitJain049/ShopEase-MERN" target="_blank" rel="noopener noreferrer" className="hover:underline">
+            <a href="https://github.com/AnkitJain049/ShopEase---ecommerce" target="_blank" rel="noopener noreferrer" className="hover:underline">
               Source Code
             </a>
           </li>
