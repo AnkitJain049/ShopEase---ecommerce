@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios'; // Import Axios
 import { clearToken } from './lib/auth';
 
 function Navbar() {
@@ -18,7 +19,6 @@ function Navbar() {
       clearToken();
       navigate('/?message=Logged Out');
     } catch (err) {
-      // fallback: still redirect, but could show error notification if desired
       clearToken();
       navigate('/?message=Logged Out');
     }
@@ -31,35 +31,34 @@ function Navbar() {
     setSearchLoading(true);
     try {
       console.log('Searching for:', searchQuery.trim());
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/products/search/${encodeURIComponent(searchQuery.trim())}`, {
-        credentials: 'include',
-      });
+      const response = await axios.get(
+        `${import.meta.env.VITE_API_BASE_URL}/api/products/search/${encodeURIComponent(searchQuery.trim())}`,
+        {
+          // Use withCredentials: true for Axios to send cookies
+          withCredentials: true,
+        }
+      );
 
       console.log('Search response status:', response.status);
+      const searchData = response.data; // Axios puts the response body in the 'data' property
       
-      if (response.ok) {
-        const searchData = await response.json();
-        console.log('Search response data:', searchData);
-        
-        // Extract products from the response structure
-        const searchResults = searchData.products || searchData;
-        console.log('Extracted search results:', searchResults);
-        
-        // Navigate to home with search results
-        navigate('/products', { 
-          state: { 
-            searchResults, 
-            searchQuery: searchQuery.trim() 
-          } 
-        });
-        setSearchQuery('');
-      } else {
-        console.error('Search failed with status:', response.status);
-        const errorData = await response.json();
-        console.error('Search error data:', errorData);
-      }
+      console.log('Search response data:', searchData);
+      
+      const searchResults = searchData.products || searchData;
+      console.log('Extracted search results:', searchResults);
+      
+      navigate('/products', { 
+        state: { 
+          searchResults, 
+          searchQuery: searchQuery.trim() 
+        } 
+      });
+      setSearchQuery('');
     } catch (error) {
-      console.error('Search error:', error);
+      console.error('Search error:', error.response?.status || error.message);
+      if (error.response?.data) {
+        console.error('Search error data:', error.response.data);
+      }
     } finally {
       setSearchLoading(false);
     }
