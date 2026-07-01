@@ -58,8 +58,8 @@ Use the following accounts to access pre-seeded buyer logs and listings:
 
 | Role | Email | Password |
 |------|-------|----------|
-| **Admin/Seed User 1** | `ankit1@gmail.com` | `Ankit@1234` |
-| **Test User 2** | `Test@gmail.com` | `Test@123` |
+| **User 1** | `ankit1@gmail.com` | `Ankit@1234` |
+| **User 2** | `Test@gmail.com` | `Test@123` |
 
 *Note: You can also register new accounts dynamically or trigger `node seed.js` in the `backend` folder to generate 50 mock users with simulated purchases and reviews.*
 
