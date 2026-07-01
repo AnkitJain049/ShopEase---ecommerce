@@ -1,13 +1,18 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios'; // Import Axios
 import { clearToken } from './lib/auth';
 
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchLoading, setSearchLoading] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setSearchQuery(searchParams.get("search") || "");
+  }, [searchParams]);
 
   const handleLogout = async (e) => {
     e.preventDefault();
@@ -24,53 +29,19 @@ function Navbar() {
     }
   };
 
-  const handleSearch = async (e) => {
+  const handleSearch = (e) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
-
-    setSearchLoading(true);
-    try {
-      console.log('Searching for:', searchQuery.trim());
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_BASE_URL}/api/products/search/${encodeURIComponent(searchQuery.trim())}`,
-        {
-          // Use withCredentials: true for Axios to send cookies
-          withCredentials: true,
-        }
-      );
-
-      console.log('Search response status:', response.status);
-      const searchData = response.data; // Axios puts the response body in the 'data' property
-      
-      console.log('Search response data:', searchData);
-      
-      const searchResults = searchData.products || searchData;
-      console.log('Extracted search results:', searchResults);
-      
-      navigate('/products', { 
-        state: { 
-          searchResults, 
-          searchQuery: searchQuery.trim() 
-        } 
-      });
-      setSearchQuery('');
-    } catch (error) {
-      console.error('Search error:', error.response?.status || error.message);
-      if (error.response?.data) {
-        console.error('Search error data:', error.response.data);
-      }
-    } finally {
-      setSearchLoading(false);
-    }
+    navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white shadow dark:bg-gray-800">
-      <div className="container px-6 py-3 mx-auto md:flex">
+    <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/70 dark:bg-gray-900/80 border-b border-gray-200/40 dark:border-gray-800/40 shadow-sm transition-all duration-300">
+      <div className="container px-6 py-2.5 mx-auto md:flex">
         <div className="flex items-center justify-between w-full">
           <Link
             to="/products"
-            className="text-3xl font-bold text-gray-800 dark:text-gray-200"
+            className="text-3xl font-black tracking-tight font-display bg-gradient-to-r from-blue-600 to-indigo-650 bg-clip-text text-transparent hover:opacity-90 transition-opacity"
           >
             SHOPEASE
           </Link>
@@ -120,14 +91,14 @@ function Navbar() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full py-2 pl-10 pr-4 text-gray-700 bg-white border rounded-lg dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 focus:border-blue-400 dark:focus:border-blue-300 focus:outline-none focus:ring focus:ring-opacity-40 focus:ring-blue-300"
+                className="w-full py-2 pl-10 pr-4 text-gray-700 bg-white/60 dark:bg-gray-800/40 border border-gray-200 dark:border-gray-700 rounded-lg dark:text-gray-300 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all text-sm"
                 placeholder="Search products..."
                 disabled={searchLoading}
               />
               <button
                 type="submit"
                 disabled={searchLoading || !searchQuery.trim()}
-                className="ml-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                className="ml-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold font-display text-sm rounded-lg shadow-sm hover:shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {searchLoading ? (
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -142,26 +113,26 @@ function Navbar() {
           <div className="flex flex-col px-2 mt-4 -mx-4 md:flex-row md:mt-0 md:mx-6 md:py-0 md:space-x-1">
             <Link
               to="/products/add-product"
-              className="px-3 py-2.5 text-gray-700 transition-colors duration-300 transform rounded-lg dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 md:mx-1 text-sm md:text-base whitespace-nowrap text-center"
+              className="px-3 py-2 text-gray-600 dark:text-gray-300 font-semibold font-display text-sm tracking-wide transition-all rounded-lg hover:bg-gray-100/60 dark:hover:bg-gray-800/60 hover:text-blue-600 dark:hover:text-blue-400 md:mx-1 whitespace-nowrap text-center flex items-center justify-center"
             >
               Add a Product
             </Link>
             <Link
               to="/user/profile"
-              className="px-3 py-2.5 text-gray-700 transition-colors duration-300 transform rounded-lg dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 md:mx-1 text-sm md:text-base whitespace-nowrap text-center"
+              className="px-3 py-2 text-gray-600 dark:text-gray-300 font-semibold font-display text-sm tracking-wide transition-all rounded-lg hover:bg-gray-100/60 dark:hover:bg-gray-800/60 hover:text-blue-600 dark:hover:text-blue-400 md:mx-1 whitespace-nowrap text-center flex items-center justify-center"
             >
               Profile
             </Link>
             <Link
               to="/user/wishlist"
-              className="px-3 py-2.5 text-gray-700 transition-colors duration-300 transform rounded-lg dark:text-gray-200 hover:bg-pink-100 dark:hover:bg-gray-700 md:mx-1 text-sm md:text-base whitespace-nowrap text-center"
+              className="px-3 py-2 text-gray-600 dark:text-gray-300 font-semibold font-display text-sm tracking-wide transition-all rounded-lg hover:bg-pink-50 dark:hover:bg-pink-950/20 hover:text-pink-600 dark:hover:text-pink-400 md:mx-1 whitespace-nowrap text-center flex items-center justify-center"
             >
               Wishlist
             </Link>
             <a
               href="#logout"
               onClick={handleLogout}
-              className="px-3 py-2.5 text-gray-700 transition-colors duration-300 transform rounded-lg dark:text-gray-200 hover:bg-red-100 dark:hover:bg-red-800 md:mx-1 text-sm md:text-base whitespace-nowrap text-center cursor-pointer"
+              className="px-3 py-2 text-gray-600 dark:text-gray-300 font-semibold font-display text-sm tracking-wide transition-all rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-650 dark:hover:text-red-400 md:mx-1 whitespace-nowrap text-center cursor-pointer flex items-center justify-center"
             >
               Logout
             </a>

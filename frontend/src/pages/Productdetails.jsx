@@ -89,7 +89,7 @@ function Productdetails() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-16 px-4 sm:px-8 lg:px-16 flex justify-center items-start">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-20 px-4 sm:px-8 lg:px-16 flex justify-center items-start transition-colors duration-300">
       {/* Notification Component */}
       {notification && (
         <Notification
@@ -107,14 +107,14 @@ function Productdetails() {
         onSuccess={handlePaymentSuccess}
       />
 
-      <div className="w-full max-w-6xl mt-5 bg-white dark:bg-gray-800 rounded-xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700">
+      <div className="w-full max-w-6xl mt-8 bg-white dark:bg-gray-800 rounded-3xl shadow-xl overflow-hidden border border-gray-200/80 dark:border-gray-700/80">
 
         {/* Product Layout (Row) */}
         <div className="flex flex-col md:flex-row">
           {/* Image */}
-          <div className="md:w-1/2 bg-gray-200 dark:bg-gray-700 flex items-center justify-center p-6">
+          <div className="md:w-1/2 bg-gray-50/50 dark:bg-gray-900/10 flex items-center justify-center p-8 border-b md:border-b-0 md:border-r border-gray-200/50 dark:border-gray-700/50 md:h-[520px]">
             <img
-              className="w-full h-full object-contain rounded"
+              className="max-h-[380px] w-auto object-contain rounded-2xl hover:scale-[1.02] transition-transform duration-300"
               src={
                 product.image.startsWith("http")
                   ? product.image
@@ -125,45 +125,58 @@ function Productdetails() {
           </div>
 
           {/* Info */}
-          <div className="md:w-1/2 p-8 space-y-6 flex flex-col justify-between">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">{product.name}</h1>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-green-500 mb-2">₹{product.price}</h2>
+          <div className="md:w-1/2 p-8 md:p-12 flex flex-col justify-between md:h-[520px] overflow-hidden">
+            <div className="space-y-4 overflow-hidden flex flex-col flex-1">
+              <div className="flex-shrink-0 space-y-3">
+                <h1 className="text-3xl md:text-4xl font-black font-display text-gray-900 dark:text-white leading-tight">{product.name}</h1>
+                
+                {/* Rating */}
+                <div className="flex items-center space-x-1">
+                  {[...Array(5)].map((_, i) => (
+                    <svg
+                      key={i}
+                      className={`w-5 h-5 ${
+                        i < Math.round(avgRating)
+                          ? "text-yellow-400"
+                          : "text-gray-300 dark:text-gray-600"
+                      }`}
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.044 3.21a1 1 0 00.95.69h3.396c.969 0 1.371 1.24.588 1.81l-2.748 2.006a1 1 0 00-.364 1.118l1.045 3.21c.3.921-.755 1.688-1.538 1.118L10 13.348l-2.748 2.006c-.783.57-1.838-.197-1.538-1.118l1.045-3.21a1 1 0 00-.364-1.118L3.647 8.637c-.783-.57-.38-1.81.588-1.81h3.396a1 1 0 00.95-.69l1.044-3.21z" />
+                    </svg>
+                  ))}
+                  <span className="ml-2 text-sm text-gray-500 dark:text-gray-400 font-medium">
+                    {avgRating} ({total} review{total !== 1 ? 's' : ''})
+                  </span>
+                </div>
 
-              {/* Rating */}
-              <div className="flex items-center space-x-1 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <svg
-                    key={i}
-                    className={`w-5 h-5 ${
-                      i < Math.round(avgRating)
-                        ? "text-yellow-400 dark:text-yellow-400"
-                        : "text-gray-300 dark:text-gray-600"
-                    }`}
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.044 3.21a1 1 0 00.95.69h3.396c.969 0 1.371 1.24.588 1.81l-2.748 2.006a1 1 0 00-.364 1.118l1.045 3.21c.3.921-.755 1.688-1.538 1.118L10 13.348l-2.748 2.006c-.783.57-1.838-.197-1.538-1.118l1.045-3.21a1 1 0 00-.364-1.118L3.647 8.637c-.783-.57-.38-1.81.588-1.81h3.396a1 1 0 00.95-.69l1.044-3.21z" />
-                  </svg>
-                ))}
-                <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
-                  {avgRating} ({total} reviews)
-                </span>
+                <h2 className="text-3xl font-extrabold text-blue-600 dark:text-blue-400 font-display">₹{product.price}</h2>
               </div>
 
-              {/* Buttons */}
-              <div className="flex flex-col mt-4 mb-4 sm:flex-row sm:items-center sm:space-x-4 space-y-4 sm:space-y-0">
+              {/* Description (Scrollable) */}
+              <div className="pt-4 border-t border-gray-150 dark:border-gray-750 flex-1 overflow-hidden flex flex-col min-h-0">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2 font-display flex-shrink-0">Description</h3>
+                <div className="text-gray-600 dark:text-gray-300 leading-relaxed text-sm md:text-base overflow-y-auto pr-2 flex-1 scrollable-description min-h-0 max-h-[170px] no-scrollbar">
+                  {product.description}
+                </div>
+              </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="space-y-3 pt-6 flex-shrink-0">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <button 
                   onClick={() => setIsPaymentModalOpen(true)}
-                  className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg text-lg hover:bg-blue-700 transition"
+                  className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold font-display rounded-xl shadow-md hover:shadow-lg transition-all text-center cursor-pointer text-base"
                 >
                   Buy Now
                 </button>
                 <button
-                  className={`flex-1 px-6 py-3 rounded-lg text-lg transition ${
+                  className={`flex-1 px-6 py-3 font-bold font-display rounded-xl border transition-all shadow-md hover:shadow-lg text-base cursor-pointer ${
                     isInWishlist
-                      ? "bg-red-600 hover:bg-red-700 text-white"
-                      : "bg-green-600 hover:bg-green-700 text-white"
+                      ? "bg-red-50 hover:bg-red-100 dark:bg-red-950/10 dark:hover:bg-red-950/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/30"
+                      : "bg-green-600 hover:bg-green-700 text-white border-transparent"
                   } ${wishlistActionLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   onClick={handleWishlistClick}
                   disabled={wishlistActionLoading}
@@ -174,30 +187,35 @@ function Productdetails() {
                 </button>
               </div>
               {wishlistActionError && (
-                <p className="text-red-600 dark:text-red-400 text-sm mt-2">
+                <p className="text-red-550 text-xs mt-2 text-center">
                   {wishlistActionError}
                 </p>
               )}
-
-              {/* Description */}
-              <h3 className="text-lg font-bold mt-10 text-gray-900 dark:text-white mb-2">Description</h3>
-              <p className="text-lg text-gray-700 dark:text-gray-300 mb-4">{product.description}</p>
             </div>
           </div>
         </div>
 
         {/* User Reviews Section — Placed Right Below */}
         {reviews && reviews.length > 0 && (
-          <div className="w-full p-6 border-t border-gray-300 dark:border-gray-600">
-            <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">User Reviews</h3>
-            <div className="space-y-4">
+          <div className="w-full p-8 md:p-12 border-t border-gray-150 dark:border-gray-700/50 bg-gray-50/20 dark:bg-gray-800/10">
+            <h3 className="text-2xl font-black font-display text-gray-900 dark:text-white mb-8">Customer Reviews</h3>
+            <div className="grid md:grid-cols-2 gap-6">
               {reviews.map((r) => (
-                <div key={r._id} className="bg-gray-100 dark:bg-gray-700 p-4 rounded-md shadow-sm border dark:border-gray-600">
-                  <div className="flex justify-between items-center mb-2">
-                    <h4 className="font-semibold text-gray-800 dark:text-white">{r.userName}</h4>
-                    <span className="text-sm text-yellow-400">⭐ {r.rating}/5</span>
+                <div key={r._id} className="bg-white dark:bg-gray-800 p-6 rounded-2xl border border-gray-200/60 dark:border-gray-700/60 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-indigo-650 dark:text-indigo-400 font-black text-sm font-display">
+                          {r.userName?.charAt(0).toUpperCase()}
+                        </div>
+                        <h4 className="font-bold text-gray-800 dark:text-white text-sm font-display">{r.userName}</h4>
+                      </div>
+                      <span className="text-xs font-semibold px-2.5 py-1 bg-yellow-100/50 dark:bg-yellow-950/20 text-yellow-750 dark:text-yellow-400 rounded-full flex items-center gap-1">
+                        ⭐ {r.rating} / 5
+                      </span>
+                    </div>
+                    <p className="text-gray-650 dark:text-gray-300 text-sm leading-relaxed italic">"{r.comment}"</p>
                   </div>
-                  <p className="text-gray-700 dark:text-gray-300">{r.comment}</p>
                 </div>
               ))}
             </div>

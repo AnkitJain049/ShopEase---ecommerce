@@ -70,11 +70,11 @@ function ReviewForm({ productId, onReviewSubmitted, onCancel }) {
 
   return (
     <div className="
-      p-6
-      border border-gray-200 dark:border-gray-700
-      rounded-xl
+      p-6 md:p-8
+      border border-gray-200/80 dark:border-gray-700/80
+      rounded-2xl
       bg-white dark:bg-gray-800
-      shadow-lg
+      shadow-md
       transform transition-all duration-300 ease-in-out
       scale-100 opacity-100
     ">
@@ -87,13 +87,13 @@ function ReviewForm({ productId, onReviewSubmitted, onCancel }) {
         />
       )}
 
-      <h4 className="text-2xl font-bold text-gray-900 dark:text-white mb-5 text-center">
+      <h4 className="text-xl font-extrabold text-gray-900 dark:text-white mb-5 text-center font-display">
         Leave a Review
       </h4>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="rating" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            Your Rating:
+          <label htmlFor="rating" className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2 font-display">
+            Your Rating
           </label>
           <div className="flex justify-center">
             <StarRating rating={rating} onRatingChange={setRating} />
@@ -101,24 +101,24 @@ function ReviewForm({ productId, onReviewSubmitted, onCancel }) {
         </div>
 
         <div>
-          <label htmlFor="comment" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            Comments:
+          <label htmlFor="comment" className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2 font-display">
+            Comments
           </label>
           <textarea
             id="comment"
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            rows="5"
+            rows="4"
             className="
-              mt-1 block w-full p-3
-              rounded-lg
-              border border-gray-300 dark:border-gray-600
-              shadow-sm
-              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-              bg-gray-50 dark:bg-gray-700
+              mt-1 block w-full p-4
+              rounded-xl
+              border border-gray-200 dark:border-gray-700
+              focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500
+              bg-white/40 dark:bg-gray-900/30
               text-gray-900 dark:text-white
               transition-all duration-200 ease-in-out
               placeholder-gray-400 dark:placeholder-gray-500
+              text-sm
             "
             placeholder="Share your thoughts on the product..."
             required
@@ -126,7 +126,7 @@ function ReviewForm({ productId, onReviewSubmitted, onCancel }) {
         </div>
 
         {error && (
-          <p className="text-red-600 dark:text-red-400 text-sm font-medium animate-pulse">
+          <p className="text-red-550 text-xs font-semibold animate-pulse">
             ⚠️ {error}
           </p>
         )}
@@ -138,16 +138,16 @@ function ReviewForm({ productId, onReviewSubmitted, onCancel }) {
               onClick={onCancel}
               className="
                 px-5 py-2.5
-                border border-gray-300 dark:border-gray-500
-                rounded-lg
-                shadow-sm
-                text-base font-medium
+                border border-gray-200 dark:border-gray-600
+                rounded-xl
+                text-sm font-bold font-display
                 text-gray-700 dark:text-gray-200
-                bg-white dark:bg-gray-600
-                hover:bg-gray-100 dark:hover:bg-gray-500
-                focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400
-                transition-colors duration-200 ease-in-out
+                bg-white dark:bg-gray-700
+                hover:bg-gray-100/60 dark:hover:bg-gray-650
+                focus:outline-none focus:ring-2 focus:ring-blue-500/20
+                transition-all duration-200 ease-in-out
                 disabled:opacity-50 disabled:cursor-not-allowed
+                cursor-pointer
               "
               disabled={loading}
             >
@@ -159,18 +159,18 @@ function ReviewForm({ productId, onReviewSubmitted, onCancel }) {
             className="
               px-5 py-2.5
               border border-transparent
-              rounded-lg
-              shadow-sm
-              text-base font-medium
+              rounded-xl
+              text-sm font-bold font-display
               text-white
               bg-blue-600 hover:bg-blue-700
-              focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
-              transition-colors duration-200 ease-in-out
+              focus:outline-none focus:ring-2 focus:ring-blue-500/20
+              transition-all duration-200 ease-in-out
               disabled:opacity-50 disabled:cursor-not-allowed
+              cursor-pointer
             "
             disabled={loading}
           >
-            {loading ? 'Submitting... 🚀' : 'Submit Review'}
+            {loading ? 'Submitting...' : 'Submit Review'}
           </button>
         </div>
       </form>

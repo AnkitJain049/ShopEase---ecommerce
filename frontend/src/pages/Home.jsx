@@ -9,9 +9,10 @@ import Chatbot from "../components/Chatbot";
 
 function Home() {
   const { data } = useFetch(`${import.meta.env.VITE_API_BASE_URL}/api/products`);
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const [filteredData, setFilteredData] = useState([]);
+  const [searchResults, setSearchResults] = useState([]);
   const [showFilter, setShowFilter] = useState(false);
   const [showSort, setShowSort] = useState(false);
   const [minPrice, setMinPrice] = useState("");
@@ -39,19 +40,38 @@ function Home() {
     }
   }, [searchParams]);
 
-  // Check for search results from navigation state
+  // Load searched products from URL query parameter
+  const searchQueryParam = searchParams.get("search");
   useEffect(() => {
-    if (location.state?.searchResults) {
-      setFilteredData(location.state.searchResults);
-      setIsSearchMode(true);
-      setSearchQuery(location.state.searchQuery || "");
-      // Clear the state to prevent showing search results on refresh
-      window.history.replaceState({}, document.title);
+    if (searchQueryParam) {
+      const fetchSearchResults = async () => {
+        try {
+          const response = await fetch(
+            `${import.meta.env.VITE_API_BASE_URL}/api/products/search/${encodeURIComponent(searchQueryParam)}`,
+            { credentials: 'include' }
+          );
+          if (response.ok) {
+            const result = await response.json();
+            const results = result.products || result;
+            setSearchResults(results);
+            setFilteredData(results);
+            setIsSearchMode(true);
+            setSearchQuery(searchQueryParam);
+          }
+        } catch (error) {
+          console.error("Search fetch error:", error);
+        }
+      };
+      fetchSearchResults();
     } else {
       setIsSearchMode(false);
       setSearchQuery("");
+      setSearchResults([]);
+      if (Array.isArray(data)) {
+        setFilteredData(data);
+      }
     }
-  }, [location.state]);
+  }, [searchQueryParam]);
 
   const showNotification = (message, type) => {
     setNotification({ message, type });
@@ -62,10 +82,10 @@ function Home() {
   };
 
   useEffect(() => {
-    if (!isSearchMode && Array.isArray(data)) {
+    if (!searchQueryParam && Array.isArray(data)) {
       setFilteredData(data);
     }
-  }, [data, isSearchMode]);
+  }, [data, searchQueryParam]);
 
   // Reset to first page when data changes
   useEffect(() => {
@@ -73,7 +93,7 @@ function Home() {
   }, [filteredData]);
 
   const applyFilter = () => {
-    let baseData = isSearchMode ? location.state?.searchResults || [] : data || [];
+    let baseData = isSearchMode ? searchResults : data || [];
     
     if ((minPrice === "" || minPrice === "0") && (maxPrice === "" || maxPrice === "0")) {
       setFilteredData(baseData); // Show all
@@ -97,8 +117,10 @@ function Home() {
   };
 
   const clearSearch = () => {
+    setSearchParams({});
     setIsSearchMode(false);
     setSearchQuery("");
+    setSearchResults([]);
     setFilteredData(data || []);
   };
 
@@ -171,7 +193,7 @@ function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-700 p-4 pt-20 relative">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-4 pt-20 relative transition-colors duration-300">
       {/* Notification Component */}
       {notification && (
         <Notification
@@ -198,7 +220,7 @@ function Home() {
               </div>
               <button
                 onClick={clearSearch}
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition"
               >
                 Clear Search
               </button>
@@ -207,31 +229,67 @@ function Home() {
         </div>
       )}
 
-      <div className="text-3xl font-bold text-white m-4 md:px-6 lg:px-30">Products</div>
+      {/* Premium Hero Section */}
+      {!isSearchMode && (
+        <div className="max-w-7xl mx-auto mb-10 mt-6 rounded-3xl overflow-hidden bg-gradient-to-br from-indigo-950 via-slate-900 to-gray-950 text-white shadow-xl relative p-8 md:p-14 flex flex-col md:flex-row items-center justify-between border border-white/5">
+          {/* Decorative glowing blobs */}
+          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl -ml-32 -mb-32"></div>
+          
+          <div className="relative z-10 max-w-xl space-y-5">
+            <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-tight font-display">
+              Upgrade Your <br />
+              <span className="bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">
+                Shopping Standard
+              </span>
+            </h1>
+            <p className="text-gray-300 text-sm md:text-base leading-relaxed max-w-md">
+              Browse our catalog of premium products, secure your orders with signature-verified payments, and get instant customer service from our AI chatbot.
+            </p>
+          </div>
+          
+          <div className="relative z-10 mt-8 md:mt-0 flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+            <button 
+              onClick={() => window.scrollTo({ top: 580, behavior: 'smooth' })} 
+              className="px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition shadow-lg hover:shadow-xl font-display text-sm text-center cursor-pointer"
+            >
+              Browse Catalog
+            </button>
+            <a 
+              href="/user/wishlist" 
+              className="px-6 py-3.5 bg-white/5 hover:bg-white/10 text-white border border-white/15 font-bold rounded-xl transition backdrop-blur-sm font-display text-sm text-center"
+            >
+              My Wishlist ❤️
+            </a>
+          </div>
+        </div>
+      )}
+
+      <div className="text-3xl font-black font-display text-gray-900 dark:text-white m-4 md:px-6 lg:px-30">Products</div>
 
       {/* Filter + Sort Area (wrapped in relative container) */}
       <div className="m-4 md:px-6 lg:px-8 mb-8 relative z-10">
         <div className="flex justify-between items-center">
           {/* Items per page selector */}
           <div className="flex items-center space-x-2 ml-22">
-            <label className="text-white text-sm">Show:</label>
+            <label className="text-gray-700 dark:text-gray-300 text-sm">Show:</label>
             <select
               value={itemsPerPage}
               onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-              className="px-2 py-1 bg-gray-800 text-white border border-gray-600 rounded text-sm"
+              className="px-2 py-1 bg-white dark:bg-gray-800 text-gray-800 dark:text-white border border-gray-300 dark:border-gray-600 rounded text-sm"
             >
               <option value={8}>8</option>
               <option value={12}>12</option>
               <option value={16}>16</option>
               <option value={20}>20</option>
             </select>
-            <span className="text-white text-sm">per page</span>
+            <span className="text-gray-700 dark:text-gray-300 text-sm">per page</span>
           </div>
 
           {/* Filter and Sort buttons */}
           <div className="flex space-x-4 mr-22">
             <button
-              className="px-6 py-2 font-medium text-white capitalize transition-colors duration-300 transform bg-gray-800 rounded-lg hover:bg-gray-500"
+              className="px-6 py-2 font-medium text-gray-800 dark:text-white capitalize transition-colors duration-300 transform bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
               onClick={() => {
                 setShowFilter(!showFilter);
                 setShowSort(false);
@@ -240,7 +298,7 @@ function Home() {
               Filter
             </button>
             <button
-              className="px-6 py-2 font-medium text-white capitalize transition-colors duration-300 transform bg-gray-800 rounded-lg hover:bg-gray-500"
+              className="px-6 py-2 font-medium text-gray-800 dark:text-white capitalize transition-colors duration-300 transform bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
               onClick={() => {
                 setShowSort(!showSort);
                 setShowFilter(false);
@@ -327,10 +385,10 @@ function Home() {
           currentItems.map((product) => <Card key={product._id} product={product} />)
         ) : (
           <div className="text-center py-12 col-span-full">
-            <h3 className="text-xl font-semibold text-gray-300 mb-2">
+            <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
               {isSearchMode ? "No products found for your search" : "No products available"}
             </h3>
-            <p className="text-gray-400">
+            <p className="text-gray-500 dark:text-gray-400">
               {isSearchMode ? "Try adjusting your search terms" : "Check back later for new products"}
             </p>
           </div>
@@ -342,7 +400,7 @@ function Home() {
         <div className="max-w-7xl mx-auto mt-8 mb-8 px-4">
           <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
             {/* Results info */}
-            <div className="text-white text-sm ml-4">
+            <div className="text-gray-700 dark:text-gray-300 text-sm ml-4">
               Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of {totalItems} results
             </div>
 
@@ -352,10 +410,10 @@ function Home() {
               <button
                 onClick={goToPreviousPage}
                 disabled={currentPage === 1}
-                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                className={`px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 transition-colors ${
                   currentPage === 1
-                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                    : 'bg-gray-800 text-white hover:bg-gray-700'
+                    ? 'bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                    : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
                 Previous
@@ -368,12 +426,12 @@ function Home() {
                     key={index}
                     onClick={() => typeof page === 'number' && goToPage(page)}
                     disabled={page === '...'}
-                    className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    className={`px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 transition-colors ${
                       page === currentPage
-                        ? 'bg-blue-600 text-white'
+                        ? 'bg-blue-600 text-white border-blue-600'
                         : page === '...'
-                        ? 'text-gray-400 cursor-default'
-                        : 'bg-gray-800 text-white hover:bg-gray-700'
+                        ? 'text-gray-400 cursor-default border-transparent'
+                        : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
                     }`}
                   >
                     {page}
@@ -385,10 +443,10 @@ function Home() {
               <button
                 onClick={goToNextPage}
                 disabled={currentPage === totalPages}
-                className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                className={`px-3 py-2 text-sm font-medium rounded-lg border border-gray-300 dark:border-gray-600 transition-colors ${
                   currentPage === totalPages
-                    ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                    : 'bg-gray-800 text-white hover:bg-gray-700'
+                    ? 'bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                    : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
               >
                 Next
