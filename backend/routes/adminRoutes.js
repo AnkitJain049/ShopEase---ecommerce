@@ -1,10 +1,47 @@
 import express from 'express';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import User from '../models/UserModel.js';
 import Transaction from '../models/TransactionModel.js';
 import { getMetrics, trackUserMetric } from '../utils/metricsTracker.js';
 import { isAuthenticated } from '../utils/auth.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const LOGS_DIR = path.join(__dirname, '../logs');
+
 const router = express.Router();
+
+/**
+ * GET /api/admin/download-logs
+ * Serves the raw log file directly to the client browser as a download.
+ */
+router.get('/download-logs', isAuthenticated, async (req, res) => {
+  try {
+    const adminEmail = req.user.email;
+    if (adminEmail !== 'admin@gmail.com' && adminEmail !== 'ankit1@gmail.com') {
+      return res.status(403).json({ error: 'Access Denied: Administrator privileges required.' });
+    }
+
+    const { type } = req.query;
+    if (type !== 'system' && type !== 'user') {
+      return res.status(400).json({ error: 'Invalid log type. Use type=system or type=user.' });
+    }
+
+    const fileName = type === 'system' ? 'system_metrics.jsonl' : 'user_metrics.jsonl';
+    const filePath = path.join(LOGS_DIR, fileName);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: `Log file ${fileName} does not exist on disk yet.` });
+    }
+
+    res.download(filePath, fileName);
+  } catch (error) {
+    console.error('Error downloading log file:', error);
+    res.status(500).json({ error: 'Failed to download metrics log file.' });
+  }
+});
 
 /**
  * POST /api/admin/report-latency
