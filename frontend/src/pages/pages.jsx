@@ -7,6 +7,7 @@ import UserProfile from './UserProfile';
 import Login from './Login';
 import Register from './Register';
 import Wishlist from './Wishlist';
+import AdminMetrics from './AdminMetrics';
 
 export {
   AddProduct,
@@ -16,4 +17,5 @@ export {
   Login,
   Register,
   Wishlist,
+  AdminMetrics,
 };

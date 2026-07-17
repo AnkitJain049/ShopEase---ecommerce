@@ -1,3 +1,5 @@
+import { trackMetric } from './metricsTracker.js';
+
 const cacheMap = new Map();
 
 /**
@@ -17,10 +19,13 @@ export const cacheMiddleware = (durationSeconds = 60) => {
     const key = req.originalUrl || req.url;
     const cached = cacheMap.get(key);
     const now = Date.now();
+    const start = performance.now();
 
     // If cache hit and not expired, return cached response directly
     if (cached && now - cached.timestamp < durationSeconds * 1000) {
       console.log(`[Cache Hit] Serving response for: ${key}`);
+      const duration = parseFloat((performance.now() - start).toFixed(2));
+      trackMetric(key, req.user?.email, 'HIT', duration);
       return res.json(cached.data);
     }
 
@@ -34,6 +39,8 @@ export const cacheMiddleware = (durationSeconds = 60) => {
           data: body
         });
       }
+      const duration = parseFloat((performance.now() - start).toFixed(2));
+      trackMetric(key, req.user?.email, 'MISS', duration);
       return originalJson.call(this, body);
     };
 

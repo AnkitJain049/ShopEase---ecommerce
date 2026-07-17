@@ -19,6 +19,7 @@ import {
   AddProduct,
   Wishlist,
   UserProfile,
+  AdminMetrics,
 } from './pages/pages.jsx'; // This imports everything from pages/index.js or pages/pages.jsx
 
 const router = createBrowserRouter(
@@ -33,6 +34,7 @@ const router = createBrowserRouter(
         <Route path="/products/add-product" element={<ProtectedRoute><AddProduct title="Add a Product" /></ProtectedRoute>} />
         <Route path="/user/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
         <Route path="/user/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+        <Route path="/admin/metrics" element={<ProtectedRoute><AdminMetrics /></ProtectedRoute>} />
       </Route>
     </>
   )

@@ -15,6 +15,7 @@ import userRoutes from "./routes/userRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 import chatbotRoutes from "./routes/chatbotRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 
 // Load environment variables
 dotenv.config();
@@ -63,6 +64,7 @@ app.use('/api/user', isAuthenticated, userRoutes);
 app.use('/api/payment', isAuthenticated, paymentRoutes);
 app.use('/api/reviews', isAuthenticated, reviewRoutes);
 app.use('/api/chatbot', isAuthenticated, chatbotRoutes);
+app.use('/api/admin', isAuthenticated, adminRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
