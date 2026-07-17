@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import Transaction from '../models/TransactionModel.js';
 import Product from '../models/ProductModel.js';
 import { isAuthenticated } from '../utils/auth.js';
+import { rateLimiter } from '../utils/rateLimiter.js';
 
 const router = express.Router();
 
@@ -13,8 +14,8 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-// Create order
-router.post('/create-order', isAuthenticated, async (req, res) => {
+// Create order (Rate limit: 15 order creations per 15 mins)
+router.post('/create-order', isAuthenticated, rateLimiter(15, 15 * 60 * 1000), async (req, res) => {
   try {
     const { productId, amount, currency } = req.body;
     

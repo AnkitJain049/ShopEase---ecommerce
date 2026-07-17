@@ -46,6 +46,13 @@ router.post('/message', isAuthenticated, async (req, res) => {
       });
     }
 
+    // Format recent chat history (last 6 messages) for model context
+    const historyLimit = 6;
+    const historyContext = chatHistory.conversation
+      .slice(-historyLimit)
+      .map(msg => `${msg.sender === 'user' ? 'Customer' : 'Support Assistant'}: ${msg.text}`)
+      .join('\n');
+
     // Add user message to history
     chatHistory.conversation.push({
       sender: 'user',
@@ -53,21 +60,24 @@ router.post('/message', isAuthenticated, async (req, res) => {
       timestamp: new Date()
     });
 
-    // Generate AI response
-    const model = genAI.getGenerativeModel({ model: "models/gemini-pro" });
+    // Generate AI response using fast gemini-1.5-flash model
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     
-    const prompt = `You are a helpful customer service assistant for ShopEase, an e-commerce platform. 
+    const prompt = `You are a helpful, professional, and friendly customer service assistant for ShopEase, an online e-commerce platform. 
     You help customers with:
-    - Product inquiries
-    - Order status
-    - Payment issues
-    - General shopping questions
-    - Technical support
+    - Product inquiries and specifications
+    - Order tracking and transaction statuses
+    - General checkout, cart, or payment questions
+    - Technical issues on the platform
     
-    Keep responses friendly, helpful, and concise. If you don't know something specific about ShopEase, 
-    provide general e-commerce advice or ask the user to contact support.
+    Keep responses concise (under 3-4 sentences), friendly, and structured. 
+    Refer to the conversation history context below to answer follow-up questions accurately.
     
-    User message: ${message}`;
+    Conversation History:
+    ${historyContext || "No previous messages in this conversation."}
+    
+    Customer: ${message}
+    Support Assistant:`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;

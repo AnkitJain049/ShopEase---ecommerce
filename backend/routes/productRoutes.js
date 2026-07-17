@@ -3,12 +3,14 @@ import Product from "../models/ProductModel.js";
 import { isAuthenticated } from "../utils/auth.js";
 import { searchProducts } from "../utils/recommendation.js";
 import { uploadProductImage } from "../utils/multerconfig.js"; // The new multer memory storage config
-import { uploadProductImageToCloudinary } from "../utils/cloudinaryfunctions.js"; // The new cloudinary upload functionimport fs from 'fs';
+import { uploadProductImageToCloudinary } from "../utils/cloudinaryfunctions.js"; // The new cloudinary upload function
+import { cacheMiddleware, clearCache } from "../utils/cache.js";
+import fs from 'fs';
 
 const router = express.Router();
 
-// Get all products
-router.get("/", async (req, res) => {
+// Get all products (Caches results for 60 seconds)
+router.get("/", cacheMiddleware(60), async (req, res) => {
   try {
     const products = await Product.find().populate("sellerId", "name");
     res.json(products);
@@ -29,8 +31,8 @@ router.get("/search/:query", async (req, res) => {
   }
 });
 
-// Get single product
-router.get("/:id", async (req, res) => {
+// Get single product (Caches details for 60 seconds)
+router.get("/:id", cacheMiddleware(60), async (req, res) => {
   try {
     const product = await Product.findById(req.params.id).populate(
       "sellerId",
@@ -75,6 +77,7 @@ router.post(
       });
 
       await product.save();
+      clearCache(); // Invalidate stale catalog caches
       res.status(201).json(product);
     } catch (error) {
       console.error("Error creating product:", error);
@@ -124,6 +127,7 @@ router.put(
         { new: true }
       );
 
+      clearCache(); // Invalidate stale catalog caches
       res.json(updatedProduct);
     } catch (error) {
       console.error("Error updating product:", error);
@@ -148,6 +152,7 @@ router.delete("/:id", isAuthenticated, async (req, res) => {
     }
 
     await Product.findByIdAndDelete(req.params.id);
+    clearCache(); // Invalidate stale catalog caches
     res.json({ message: "Product deleted successfully" });
   } catch (error) {
     console.error("Error deleting product:", error);

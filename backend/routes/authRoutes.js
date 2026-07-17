@@ -2,11 +2,12 @@ import express from 'express';
 import bcrypt from 'bcrypt';
 import User from '../models/UserModel.js';
 import { isAuthenticated, generateJwtForUser, setAuthCookie, clearAuthCookie } from '../utils/auth.js';
+import { rateLimiter } from '../utils/rateLimiter.js';
 
 const router = express.Router();
 
-// Register route
-router.post('/register', async (req, res) => {
+// Register route (Rate limit: 10 attempts per 15 mins)
+router.post('/register', rateLimiter(10, 15 * 60 * 1000), async (req, res) => {
   try {
     const { name, email, password, contactNumber } = req.body;
 
@@ -36,8 +37,8 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// Login route
-router.post('/login', async (req, res) => {
+// Login route (Rate limit: 20 attempts per 15 mins)
+router.post('/login', rateLimiter(20, 15 * 60 * 1000), async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
