@@ -1,10 +1,29 @@
 import express from 'express';
 import User from '../models/UserModel.js';
 import Transaction from '../models/TransactionModel.js';
-import { getMetrics } from '../utils/metricsTracker.js';
+import { getMetrics, trackUserMetric } from '../utils/metricsTracker.js';
 import { isAuthenticated } from '../utils/auth.js';
 
 const router = express.Router();
+
+/**
+ * POST /api/admin/report-latency
+ * Logs client-side user roundtrip query durations.
+ */
+router.post('/report-latency', isAuthenticated, async (req, res) => {
+  try {
+    const { url, duration, status } = req.body;
+    if (!url || duration === undefined || !status) {
+      return res.status(400).json({ error: 'Missing metric fields.' });
+    }
+
+    trackUserMetric(url, req.user?.email, status, duration);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error logging client latency:', error);
+    res.status(500).json({ error: 'Failed to record user latency metrics.' });
+  }
+});
 
 /**
  * GET /api/admin/metrics

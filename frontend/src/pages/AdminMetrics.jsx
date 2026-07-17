@@ -5,6 +5,12 @@ import useFetch from '../hooks/useFetch';
 function AdminMetrics() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('cache');
+  const [povTab, setPovTab] = useState('system');
+  const [visibleCount, setVisibleCount] = useState(10);
+
+  useEffect(() => {
+    setVisibleCount(10);
+  }, [activeTab, povTab]);
 
   // Fetch administrative statistics & user records from API
   const { data, loading, error } = useFetch(
@@ -44,13 +50,23 @@ function AdminMetrics() {
   }
 
   const { users = [], transactions = [], metrics = {} } = data || {};
-  const { hitRate = 0, avgHitTime = 0, avgMissTime = 0, totalRequests = 0, logs = [] } = metrics;
+  const { 
+    hitRate = 0, 
+    avgHitTime = 0, 
+    avgMissTime = 0, 
+    userAvgHitTime = 0, 
+    userAvgMissTime = 0, 
+    totalRequests = 0, 
+    systemLogs = [], 
+    userLogs = [] 
+  } = metrics;
 
   // Calculate speed improvement factor
   const speedRatio = avgHitTime > 0 ? (avgMissTime / avgHitTime).toFixed(1) : 'N/A';
+  const userSpeedRatio = userAvgHitTime > 0 ? (userAvgMissTime / userAvgHitTime).toFixed(1) : 'N/A';
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-24 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
+    <div className="min-h-screen bg-gray-55 dark:bg-gray-900 py-24 px-4 sm:px-6 lg:px-8 transition-colors duration-300">
       <div className="max-w-7xl mx-auto space-y-8">
         
         {/* Page Header */}
@@ -82,8 +98,15 @@ function AdminMetrics() {
           {/* Average Cache Response Time */}
           <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-200/80 dark:border-gray-700/80 shadow-sm space-y-2">
             <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 font-display">Avg Cache Latency</h3>
-            <div className="flex items-baseline space-x-2">
-              <span className="text-4xl font-black text-blue-600 dark:text-blue-400 font-display">{avgHitTime}ms</span>
+            <div className="space-y-1">
+              <div className="flex justify-between items-center text-sm font-semibold">
+                <span className="text-gray-400">Server POV:</span>
+                <span className="text-blue-600 dark:text-blue-400 font-mono">{avgHitTime}ms</span>
+              </div>
+              <div className="flex justify-between items-center text-sm font-semibold">
+                <span className="text-gray-400">User POV:</span>
+                <span className="text-blue-500 dark:text-blue-300 font-mono">{userAvgHitTime}ms</span>
+              </div>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">Latency of RAM Cache lookups.</p>
           </div>
@@ -91,19 +114,32 @@ function AdminMetrics() {
           {/* Average DB Latency */}
           <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-gray-200/80 dark:border-gray-700/80 shadow-sm space-y-2">
             <h3 className="text-xs font-bold uppercase tracking-wider text-gray-400 font-display">Avg DB Latency</h3>
-            <div className="flex items-baseline space-x-2">
-              <span className="text-4xl font-black text-indigo-600 dark:text-indigo-400 font-display">{avgMissTime}ms</span>
+            <div className="space-y-1">
+              <div className="flex justify-between items-center text-sm font-semibold">
+                <span className="text-gray-400">Server POV:</span>
+                <span className="text-indigo-600 dark:text-indigo-400 font-mono">{avgMissTime}ms</span>
+              </div>
+              <div className="flex justify-between items-center text-sm font-semibold">
+                <span className="text-gray-400">User POV:</span>
+                <span className="text-indigo-500 dark:text-indigo-300 font-mono">{userAvgMissTime}ms</span>
+              </div>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Latency of raw MongoDB operations.</p>
+            <p className="text-xs text-gray-550 dark:text-gray-400">Latency of raw MongoDB operations.</p>
           </div>
 
           {/* Speed Improvement */}
           <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-6 rounded-3xl text-white shadow-md space-y-2 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full blur-xl -mr-6 -mt-6"></div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-blue-100 font-display">Performance Boost</h3>
-            <div className="flex items-baseline space-x-1">
-              <span className="text-4xl font-black font-display">{speedRatio}x</span>
-              <span className="text-sm font-semibold text-blue-200">Faster</span>
+            <div className="space-y-0.5">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-blue-200">Server Speedup:</span>
+                <span className="font-bold">{speedRatio}x</span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-blue-200">User Speedup:</span>
+                <span className="font-bold">{userSpeedRatio}x</span>
+              </div>
             </div>
             <p className="text-xs text-blue-100">Relative speed improvement of cache vs database.</p>
           </div>
@@ -112,7 +148,7 @@ function AdminMetrics() {
         {/* Tab switch Navigation Bar */}
         <div className="bg-white dark:bg-gray-800 p-2 rounded-2xl border border-gray-200/80 dark:border-gray-700/80 shadow-sm flex space-x-2 max-w-lg">
           <button
-            onClick={() => setActiveTab('cache')}
+            onClick={() => { setActiveTab('cache'); setPovTab('system'); }}
             className={`flex-1 py-2.5 text-xs font-bold font-display rounded-xl transition ${
               activeTab === 'cache'
                 ? 'bg-blue-600 text-white shadow-sm'
@@ -148,47 +184,116 @@ function AdminMetrics() {
           
           {/* TAB 1: CACHE LOGS */}
           {activeTab === 'cache' && (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200/50 dark:divide-gray-700/50">
-                <thead className="bg-gray-50 dark:bg-gray-900/50 text-left text-xs uppercase text-gray-400 font-bold font-display">
-                  <tr>
-                    <th className="px-6 py-4">Timestamp</th>
-                    <th className="px-6 py-4">Endpoint Path</th>
-                    <th className="px-6 py-4">User Session</th>
-                    <th className="px-6 py-4">Cache Status</th>
-                    <th className="px-6 py-4">Latency (ms)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200/50 dark:divide-gray-700/50 text-sm text-gray-700 dark:text-gray-200">
-                  {logs.length === 0 ? (
+            <div className="space-y-4 p-6">
+              {/* Sub-tab selection bar for System POV vs User POV */}
+              <div className="bg-gray-100 dark:bg-gray-900 p-1.5 rounded-xl flex space-x-2 max-w-md">
+                <button
+                  onClick={() => setPovTab('system')}
+                  className={`flex-1 py-2 text-xs font-bold font-display rounded-lg transition ${
+                    povTab === 'system'
+                      ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm'
+                      : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  🖥️ System POV (Node.js Processing)
+                </button>
+                <button
+                  onClick={() => setPovTab('user')}
+                  className={`flex-1 py-2 text-xs font-bold font-display rounded-lg transition ${
+                    povTab === 'user'
+                      ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm'
+                      : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  📱 User POV (Browser Roundtrip)
+                </button>
+              </div>
+
+              <div className="overflow-x-auto border border-gray-200/50 dark:border-gray-700/50 rounded-2xl">
+                <table className="min-w-full divide-y divide-gray-200/50 dark:divide-gray-700/50">
+                  <thead className="bg-gray-50 dark:bg-gray-900/50 text-left text-xs uppercase text-gray-400 font-bold font-display">
                     <tr>
-                      <td colSpan="5" className="px-6 py-8 text-center text-gray-400 font-medium">
-                        No transactions or diagnostic logs recorded yet. Visit the catalog to trigger hits/misses.
-                      </td>
+                      <th className="px-6 py-4">Timestamp</th>
+                      <th className="px-6 py-4">Endpoint Path</th>
+                      <th className="px-6 py-4">User Session</th>
+                      <th className="px-6 py-4">Cache Status</th>
+                      <th className="px-6 py-4">Latency (ms)</th>
                     </tr>
-                  ) : (
-                    logs.map((log, idx) => (
-                      <tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/20 transition-colors">
-                        <td className="px-6 py-4 font-mono text-xs text-gray-400">
-                          {new Date(log.timestamp).toLocaleTimeString()}
-                        </td>
-                        <td className="px-6 py-4 font-mono text-xs text-blue-650 dark:text-blue-400 font-semibold">{log.url}</td>
-                        <td className="px-6 py-4 text-xs font-medium">{log.email}</td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${
-                            log.status === 'HIT'
-                              ? 'bg-green-100 dark:bg-green-950/20 text-green-700 dark:text-green-400 border border-green-200/20'
-                              : 'bg-yellow-100 dark:bg-yellow-950/20 text-yellow-700 dark:text-yellow-400 border border-yellow-200/20'
-                          }`}>
-                            {log.status === 'HIT' ? '⚡ CACHE HIT' : '💾 DB MISS'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 font-bold font-mono">{log.duration} ms</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200/50 dark:divide-gray-700/50 text-sm text-gray-700 dark:text-gray-200">
+                    {povTab === 'system' ? (
+                      systemLogs.length === 0 ? (
+                        <tr>
+                          <td colSpan="5" className="px-6 py-8 text-center text-gray-400 font-medium">
+                            No system-level metrics logs recorded yet. Visit the catalog to trigger hits/misses.
+                          </td>
+                        </tr>
+                      ) : (
+                        systemLogs.slice(0, visibleCount).map((log, idx) => (
+                          <tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/20 transition-colors">
+                            <td className="px-6 py-4 font-mono text-xs text-gray-400">
+                              {new Date(log.timestamp).toLocaleTimeString()}
+                            </td>
+                            <td className="px-6 py-4 font-mono text-xs text-blue-650 dark:text-blue-400 font-semibold">{log.url}</td>
+                            <td className="px-6 py-4 text-xs font-medium">{log.email}</td>
+                            <td className="px-6 py-4">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${
+                                log.status === 'HIT'
+                                  ? 'bg-green-100 dark:bg-green-950/20 text-green-700 dark:text-green-400 border border-green-200/20'
+                                  : 'bg-yellow-100 dark:bg-yellow-950/20 text-yellow-700 dark:text-yellow-400 border border-yellow-200/20'
+                              }`}>
+                                {log.status === 'HIT' ? '⚡ CACHE HIT' : '💾 DB MISS'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 font-bold font-mono">{log.duration} ms</td>
+                          </tr>
+                        ))
+                      )
+                    ) : (
+                      userLogs.length === 0 ? (
+                        <tr>
+                          <td colSpan="5" className="px-6 py-8 text-center text-gray-400 font-medium">
+                            No client-reported latency logs recorded yet. Navigate the web catalog to report browser roundtrips.
+                          </td>
+                        </tr>
+                      ) : (
+                        userLogs.slice(0, visibleCount).map((log, idx) => (
+                          <tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/20 transition-colors">
+                            <td className="px-6 py-4 font-mono text-xs text-gray-400">
+                              {new Date(log.timestamp).toLocaleTimeString()}
+                            </td>
+                            <td className="px-6 py-4 font-mono text-xs text-blue-650 dark:text-blue-400 font-semibold">{log.url}</td>
+                            <td className="px-6 py-4 text-xs font-medium">{log.email}</td>
+                            <td className="px-6 py-4">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${
+                                log.status === 'HIT'
+                                  ? 'bg-green-100 dark:bg-green-950/20 text-green-700 dark:text-green-400 border border-green-200/20'
+                                  : 'bg-yellow-100 dark:bg-yellow-950/20 text-yellow-700 dark:text-yellow-400 border border-yellow-200/20'
+                              }`}>
+                                {log.status === 'HIT' ? '⚡ CACHE HIT' : '💾 DB MISS'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 font-bold font-mono">{log.duration} ms</td>
+                          </tr>
+                        ))
+                      )
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Load More Button */}
+              {((povTab === 'system' && systemLogs.length > visibleCount) ||
+                (povTab === 'user' && userLogs.length > visibleCount)) && (
+                <div className="flex justify-center pt-2">
+                  <button
+                    onClick={() => setVisibleCount(prev => prev + 10)}
+                    className="px-6 py-2.5 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-white font-bold font-display text-xs rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm cursor-pointer transition"
+                  >
+                    📂 Load More Records ({povTab === 'system' ? systemLogs.length - visibleCount : userLogs.length - visibleCount} remaining)
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

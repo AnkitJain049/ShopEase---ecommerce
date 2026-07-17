@@ -26,6 +26,7 @@ export const cacheMiddleware = (durationSeconds = 60) => {
       console.log(`[Cache Hit] Serving response for: ${key}`);
       const duration = parseFloat((performance.now() - start).toFixed(2));
       trackMetric(key, req.user?.email, 'HIT', duration);
+      res.setHeader('X-Cache-Status', 'HIT');
       return res.json(cached.data);
     }
 
@@ -41,6 +42,7 @@ export const cacheMiddleware = (durationSeconds = 60) => {
       }
       const duration = parseFloat((performance.now() - start).toFixed(2));
       trackMetric(key, req.user?.email, 'MISS', duration);
+      res.setHeader('X-Cache-Status', 'MISS');
       return originalJson.call(this, body);
     };
 

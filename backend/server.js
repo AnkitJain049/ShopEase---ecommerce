@@ -43,7 +43,8 @@ app.use(cors({
   origin: isDevelopment 
     ? (process.env.FRONTEND_URL || 'http://localhost:5173')
     : process.env.FRONTEND_URL,
-  credentials: true
+  credentials: true,
+  exposedHeaders: ['X-Cache-Status']
 }));
 
 // Cookie parser for httpOnly JWT cookie support
