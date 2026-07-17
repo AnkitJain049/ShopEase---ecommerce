@@ -1,6 +1,6 @@
 # ShopEase - Premium E-Commerce Ecosystem
 
-ShopEase is a state-of-the-art, full-stack e-commerce application constructed using the MERN stack (**MongoDB, Express, React, Node.js**). Designed with modern visual aesthetics, the application includes signature-verified payments, an AI-powered customer support chatbot, and personalized catalog search recommendations.
+ShopEase is a state-of-the-art, full-stack e-commerce application constructed using the MERN stack (**MongoDB, Express, React, Node.js**). Designed with modern visual aesthetics, the application includes signature-verified payments, an AI-powered customer support chatbot, personalized catalog search recommendations, and a custom performance metrics diagnostic engine.
 
 ---
 
@@ -10,11 +10,12 @@ ShopEase is a state-of-the-art, full-stack e-commerce application constructed us
 2. [Workflow & Integration Model](#-workflow--integration-model)
 3. [Ecosystem Credentials (Authentication)](#-ecosystem-credentials-authentication)
 4. [Razorpay Payment Gateway Details](#-razorpay-payment-gateway-details)
-5. [Ecosystem Features](#-ecosystem-features)
-6. [Tech Stack](#-tech-stack)
-7. [Environment Configurations](#-environment-configurations)
-8. [Quick Start & Setup](#-quick-start--setup)
-9. [Available Commands](#-available-commands)
+5. [Performance Metrics & Diagnostics Dashboard](#-performance-metrics--diagnostics-dashboard)
+6. [Ecosystem Features](#-ecosystem-features)
+7. [Tech Stack](#-tech-stack)
+8. [Environment Configurations](#-environment-configurations)
+9. [Quick Start & Setup](#-quick-start--setup)
+10. [Available Commands](#-available-commands)
 
 ---
 
@@ -22,7 +23,7 @@ ShopEase is a state-of-the-art, full-stack e-commerce application constructed us
 
 ShopEase is partitioned into three unified layers:
 - **Client (Frontend)**: React Single Page Application (SPA) powered by Vite, styled with modern Vanilla CSS gradients, glassmorphism layers, and responsive grids.
-- **API Server (Backend)**: Express.js server managing authentication sessions, transaction logs, user feedback, and AI pipelines.
+- **API Server (Backend)**: Express.js server managing authentication sessions, cache timing records, transaction logs, user feedback, and AI pipelines.
 - **Database (MongoDB)**: Structured data layer containing product models, transaction histories, user logs, and chat records.
 
 ```mermaid
@@ -32,6 +33,8 @@ graph TD
     B <-->|Semantic prompts| D[Google Gemini AI API]
     A <-->|Direct Checkout Dialog| E[Razorpay Payment API]
     B <-->|Verification signatures| E
+    A -.->|1. Measure & report roundtrip latency| B
+    B -.->|2. Append logs & rotate 500-line cap| F[(Local JSONL Files)]
 ```
 
 ---
@@ -54,14 +57,15 @@ graph TD
 
 ## 🔐 Ecosystem Credentials (Authentication)
 
-Use the following accounts to access pre-seeded buyer logs and listings:
+Use the following accounts to access pre-seeded buyer logs, listings, and the administrator metrics panel:
 
-| Role | Email | Password |
-|------|-------|----------|
-| **User 1** | `ankit1@gmail.com` | `Ankit@1234` |
-| **User 2** | `Test@gmail.com` | `Test@123` |
+| Role | Email | Password | Privileges |
+|------|-------|----------|------------|
+| **Developer Admin** | `ankit1@gmail.com` | `Ankit@1234` | All access, can view `/admin/metrics` |
+| **System Admin** | `admin@gmail.com` | *Create on Sign Up* | All access, can view `/admin/metrics` |
+| **Regular User** | `Test@gmail.com` | `Test@123` | Storefront buyer privileges only |
 
-*Note: You can also register new accounts dynamically or trigger `node seed.js` in the `backend` folder to generate 50 mock users with simulated purchases and reviews.*
+*Note: You can trigger `node seed.js` in the `backend` folder to generate 50 mock users with simulated purchases and reviews.*
 
 ---
 
@@ -82,6 +86,24 @@ Use the following credentials in the Razorpay payment dialog to authorize test t
 | **RuPay** | `6527 6589 0000 1005` | Random CVV, Any Future Date |
 | **Diners** | `3608 280009 1007` | Random CVV, Any Future Date |
 | **Amex** | `3402 560004 01007` | Random CVV, Any Future Date |
+
+---
+
+## ⚡ Performance Metrics & Diagnostics Dashboard
+
+ShopEase features a premium, secure performance dashboard accessible at `/admin/metrics` for administrator accounts. It tracks, parses, and formats system speed logs and client roundtrip timings to prove MERN optimization metrics.
+
+### 1. Dual-POV Latency Tracking
+* **System POV (Server Latency)**: Measures the internal execution time of Express routes in Node.js (dropping from **~30ms - 80ms** database lookups down to **<1ms** on in-memory cache hits).
+* **User POV (Browser Roundtrip Latency)**: Measures client-side timing using browser high-precision timers (`performance.now()`), showing real-world roundtrip times including remote internet ping latencies (typically **~180ms** on Render free tiers).
+
+### 2. Auto-Rotated JSONL Log Storage
+* Diagnostics logs are persisted on the backend disk at `backend/logs/system_metrics.jsonl` and `backend/logs/user_metrics.jsonl`.
+* To prevent disk bloat, a log-rotation script automatically checks line counts on every log event, keeping only the **last 500 lines** and deleting the oldest entries from the top.
+
+### 3. Log Downloads & Formatting
+* Administrators can download log history directly from the frontend dashboard.
+* The backend automatically reads the internal `.jsonl` files, compiles them into a valid standard JSON Array, and pretty-prints them into readable `.json` files for text editors or diagnostic parsing.
 
 ---
 
@@ -148,6 +170,4 @@ The application will launch on:
 
 ## 📦 Available Commands
 
-- `npm run dev` - Runs client and server processes concurrently.
-- `npm run setup` - Installs root, frontend, and backend packages.
-- `npm run clean` - Deletes all node_modules recursively.
+Refer to subfolder `README.md` files for backend and frontend commands.
