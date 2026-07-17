@@ -12,6 +12,30 @@ function AdminMetrics() {
     setVisibleCount(10);
   }, [activeTab, povTab]);
 
+  const handleDownloadLogs = async () => {
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/admin/download-logs?type=${povTab}`,
+        { credentials: 'include' }
+      );
+      if (!response.ok) {
+        throw new Error('Failed to download log file.');
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = povTab === 'system' ? 'system_metrics.jsonl' : 'user_metrics.jsonl';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to download log file. Ensure you are logged in as admin.');
+    }
+  };
+
   // Fetch administrative statistics & user records from API
   const { data, loading, error } = useFetch(
     `${import.meta.env.VITE_API_BASE_URL}/api/admin/metrics`
@@ -185,27 +209,36 @@ function AdminMetrics() {
           {/* TAB 1: CACHE LOGS */}
           {activeTab === 'cache' && (
             <div className="space-y-4 p-6">
-              {/* Sub-tab selection bar for System POV vs User POV */}
-              <div className="bg-gray-100 dark:bg-gray-900 p-1.5 rounded-xl flex space-x-2 max-w-md">
+              {/* Sub-tab selection bar and Download Button */}
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="bg-gray-100 dark:bg-gray-900 p-1.5 rounded-xl flex space-x-2 max-w-md flex-1">
+                  <button
+                    onClick={() => setPovTab('system')}
+                    className={`flex-1 py-2 text-xs font-bold font-display rounded-lg transition ${
+                      povTab === 'system'
+                        ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm'
+                        : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    🖥️ System POV (Node.js Processing)
+                  </button>
+                  <button
+                    onClick={() => setPovTab('user')}
+                    className={`flex-1 py-2 text-xs font-bold font-display rounded-lg transition ${
+                      povTab === 'user'
+                        ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm'
+                        : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    📱 User POV (Browser Roundtrip)
+                  </button>
+                </div>
+
                 <button
-                  onClick={() => setPovTab('system')}
-                  className={`flex-1 py-2 text-xs font-bold font-display rounded-lg transition ${
-                    povTab === 'system'
-                      ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm'
-                      : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
-                  }`}
+                  onClick={handleDownloadLogs}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold font-display text-xs rounded-xl shadow-sm hover:shadow cursor-pointer transition flex items-center gap-1.5 self-start md:self-auto"
                 >
-                  🖥️ System POV (Node.js Processing)
-                </button>
-                <button
-                  onClick={() => setPovTab('user')}
-                  className={`flex-1 py-2 text-xs font-bold font-display rounded-lg transition ${
-                    povTab === 'user'
-                      ? 'bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm'
-                      : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
-                  }`}
-                >
-                  📱 User POV (Browser Roundtrip)
+                  📥 Download {povTab === 'system' ? 'System' : 'User'} Logs (.jsonl)
                 </button>
               </div>
 
