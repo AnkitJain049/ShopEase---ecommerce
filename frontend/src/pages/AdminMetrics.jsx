@@ -25,7 +25,7 @@ function AdminMetrics() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = povTab === 'system' ? 'system_metrics.jsonl' : 'user_metrics.jsonl';
+      a.download = povTab === 'system' ? 'system_metrics.json' : 'user_metrics.json';
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -238,7 +238,7 @@ function AdminMetrics() {
                   onClick={handleDownloadLogs}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold font-display text-xs rounded-xl shadow-sm hover:shadow cursor-pointer transition flex items-center gap-1.5 self-start md:self-auto"
                 >
-                  📥 Download {povTab === 'system' ? 'System' : 'User'} Logs (.jsonl)
+                  📥 Download {povTab === 'system' ? 'System' : 'User'} Logs (.json)
                 </button>
               </div>
 

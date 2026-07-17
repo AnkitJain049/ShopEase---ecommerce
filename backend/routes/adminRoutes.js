@@ -36,7 +36,21 @@ router.get('/download-logs', isAuthenticated, async (req, res) => {
       return res.status(404).json({ error: `Log file ${fileName} does not exist on disk yet.` });
     }
 
-    res.download(filePath, fileName);
+    // Read the JSONL file and convert it to a standard pretty-printed JSON Array
+    const fileContent = fs.readFileSync(filePath, 'utf8');
+    const lines = fileContent.trim().split('\n').filter(Boolean);
+    const logsArray = lines.map(line => {
+      try {
+        return JSON.parse(line);
+      } catch {
+        return null;
+      }
+    }).filter(Boolean);
+
+    const downloadName = type === 'system' ? 'system_metrics.json' : 'user_metrics.json';
+    res.setHeader('Content-Type', 'application/json');
+    res.attachment(downloadName);
+    res.send(JSON.stringify(logsArray, null, 2));
   } catch (error) {
     console.error('Error downloading log file:', error);
     res.status(500).json({ error: 'Failed to download metrics log file.' });
